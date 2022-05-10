@@ -6,13 +6,10 @@ const startingBalance = stdlib.parseCurrency(100);
 
 const [ accSeller, accBuyer ] =
   await stdlib.newTestAccounts(2, startingBalance);
-console.log('Hello, Seller and Buyer!');
 
-console.log('Launching...');
 const ctcSeller = accSeller.contract(backend);
 const ctcBuyer = accBuyer.contract(backend, ctcSeller.getInfo());
 
-console.log('Starting backends...');
 const common = {
   seeTimeout: () => console.log('timed out'),
   seeTransfer: () => console.log('transfered'),
@@ -28,8 +25,21 @@ const optInAccountsToASAs = async () => {
 };
 optInAccountsToASAs();
 
+const printBalance = async (name, account) => {
+  console.log(`** ${name} balance **`)
+  console.log("Algo: " + stdlib.bigNumberToNumber(await stdlib.balanceOf(account))/1_000_000);
+  const balance = await stdlib.balancesOf(account, [nft.id, degen.id])
+  console.log(`NFT: ${stdlib.bigNumberToNumber(balance[0])} - Degen: ${stdlib.bigNumberToNumber(balance[1])}`);
+}
+
+console.log('Before Program Balances');
+await printBalance('seller', accSeller);
+await printBalance('buyer', accBuyer);
+console.log('\n');
+
 const price = 10;
-const time = 1;
+const time = 1000;
+
 await Promise.all([
   backend.Seller(ctcSeller, {
     getSwap: () => {
@@ -46,11 +56,6 @@ await Promise.all([
   }),
 ]);
 
-const printBalance = async (name, account) => {
-  console.log(stdlib.bigNumberToNumber(await stdlib.balanceOf(account)));
-  const balance = await stdlib.balancesOf(account, [nft.id, degen.id])
-  console.log(`NFT: ${stdlib.bigNumberToNumber(balance[0])} - Degen: ${stdlib.bigNumberToNumber(balance[1])}`);
-}
-
+console.log('After Program Balances');
 await printBalance('seller', accSeller);
 await printBalance('buyer', accBuyer);
