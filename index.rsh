@@ -7,50 +7,49 @@ const Common = {
 };
 
 export const main = Reach.App(() => {
-  const A = Participant('Alice', {
+  const Seller = Participant('Seller', {
     ...Common,
-    // Tuple
     getSwap: Fun([], Tuple(Token, Token, UInt, UInt)),
     cancel: Fun([], Bool),
   });
-  const B = Participant('Bob', {
+  const Buyer = Participant('Buyer', {
     ...Common,
     accSwap: Fun([Token, Token, UInt], Bool),
   });
   init();
 
-  A.only(() => {
+  Seller.only(() => {
     const [ nft, degen, price, time ] = declassify(interact.getSwap());
     assume(nft != degen); });
-  A.publish(nft, degen, price, time);
+  Seller.publish(nft, degen, price, time);
   commit();
-  A.pay([1, [1, nft] ]);
+  Seller.pay([1, [1, nft] ]);
   commit();
   
   fork()
-  .case(A, (() => ({
+  .case(Seller, (() => ({
     msg:1,
     when: declassify(interact.cancel()) })),
     ((v) => v),
     (_) => {
-      transfer([balance(), [1, nft] ]).to(A);
+      transfer([balance(), [1, nft] ]).to(Seller);
       commit();
       exit();
     })
-  .case(B, (() => ({
+  .case(Buyer, (() => ({
       msg: price,
       when: declassify(interact.accSwap(nft, degen, price)) })),
     ((v) => v),
     (_) => {
       commit();
-      B.pay([[ price, degen]]);
-      transfer([balance(), [price, degen]]).to(A);
-      transfer([[1,nft]]).to(B);
+      Buyer.pay([[ price, degen]]);
+      transfer([balance(), [price, degen]]).to(Seller);
+      transfer([[1,nft]]).to(Buyer);
       commit();
       exit();
     }).timeout(absoluteTime(time), () => {
-      A.publish();
-      transfer([ balance(), [1, nft] ]).to(A);
+      Seller.publish();
+      transfer([ balance(), [1, nft] ]).to(Seller);
       commit();
       exit();
     });
