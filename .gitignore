@@ -2,3 +2,5 @@
 reach
 build/
 .vscode/
+.dockerignore
+docker
